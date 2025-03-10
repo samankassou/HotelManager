@@ -1,0 +1,59 @@
+# Fichiers compilés
+*.class
+*.jar
+*.war
+*.ear
+
+# Répertoires de compilation
+/bin/
+/build/
+/target/
+out/
+
+# Fichiers de logs
+*.log
+logs/
+hs_err_pid*
+
+# Configurations spécifiques aux IDE
+/.idea/
+/.vscode/
+/*.iml
+
+# Dépendances (si non gérées par un gestionnaire de dépendances)
+lib/
+
+# Bases de données locales (SQLite, H2)
+*.db
+*.sqlite
+*.sqlite3
+*.h2.db
+*.mv.db
+
+# Fichiers temporaires
+*.tmp
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Gradle
+.gradle/
+/build/
+!gradle/wrapper/gradle-wrapper.jar
+.gradle-cache/
+
+# Maven
+.mvn/
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+
+# Java environnement spécifique
+*.log
+*.lock
+*.class
+*.ctxt
+*.ser
