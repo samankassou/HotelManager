@@ -6,12 +6,12 @@ public class Reservation {
     private String id;
     private Date dateArrivee;
     private Date dateDepart;
-    private double prixTotal;
+    private int prixTotal;
     private Client client;
     private Chambre chambre;
     private Facture facture;
 
-    public Reservation(String id, Date dateArrivee, Date dateDepart, double prixTotal, Client client, Chambre chambre) {
+    public Reservation(String id, Date dateArrivee, Date dateDepart, int prixTotal, Client client, Chambre chambre) {
         this.id = id;
         this.dateArrivee = dateArrivee;
         this.dateDepart = dateDepart;
@@ -30,8 +30,8 @@ public class Reservation {
     public Date getDateDepart() { return dateDepart; }
     public void setDateDepart(Date dateDepart) { this.dateDepart = dateDepart; }
 
-    public double getPrixTotal() { return prixTotal; }
-    public void setPrixTotal(double prixTotal) { this.prixTotal = prixTotal; }
+    public int getPrixTotal() { return prixTotal; }
+    public void setPrixTotal(int prixTotal) { this.prixTotal = prixTotal; }
 
     public Client getClient() { return client; }
     public void setClient(Client client) { this.client = client; }

@@ -3,10 +3,10 @@ package hotelmanager;
 public class Chambre {
     private int numero;
     private String type;
-    private double tarif;
+    private int tarif; // Changer de double à int pour FCFA
     private boolean disponible;
 
-    public Chambre(int numero, String type, double tarif, boolean disponible) {
+    public Chambre(int numero, String type, int tarif, boolean disponible) {
         this.numero = numero;
         this.type = type;
         this.tarif = tarif;
@@ -20,8 +20,8 @@ public class Chambre {
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
 
-    public double getTarif() { return tarif; }
-    public void setTarif(double tarif) { this.tarif = tarif; }
+    public int getTarif() { return tarif; } // Changé de double à int
+    public void setTarif(int tarif) { this.tarif = tarif; } // Changé de double à int
 
     public boolean isDisponible() { return disponible; }
     public void setDisponible(boolean disponible) { this.disponible = disponible; }

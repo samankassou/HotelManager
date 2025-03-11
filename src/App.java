@@ -320,9 +320,9 @@ public class App {
         chambresPanel.add(actionsPanel, BorderLayout.SOUTH);
 
         // Ajouter quelques chambres de démonstration
-        chambres.add(new Chambre(101, "Simple", 75.0, true));
-        chambres.add(new Chambre(102, "Double", 100.0, true));
-        chambres.add(new Chambre(103, "Suite", 150.0, false));
+        chambres.add(new Chambre(101, "Simple", 25000, true));
+        chambres.add(new Chambre(102, "Double", 35000, true));
+        chambres.add(new Chambre(103, "Suite", 50000, false));
 
         // Rafraîchir l'affichage
         rafraichirTableauChambres();
@@ -358,7 +358,7 @@ public class App {
             try {
                 int numero = Integer.parseInt(numeroField.getText());
                 String type = (String) typeCombo.getSelectedItem();
-                double tarif = Double.parseDouble(tarifField.getText());
+                int tarif = Integer.parseInt(tarifField.getText());
                 boolean disponible = disponibleCheck.isSelected();
                 
                 // Vérifier que le numéro de chambre n'existe pas déjà
@@ -490,7 +490,7 @@ public class App {
         saveButton.addActionListener(e -> {
             try {
                 String type = (String) typeCombo.getSelectedItem();
-                double tarif = Double.parseDouble(tarifField.getText());
+                int tarif = Integer.parseInt(tarifField.getText());
                 boolean disponible = disponibleCheck.isSelected();
                 
                 // Mettre à jour les propriétés de la chambre
@@ -706,14 +706,14 @@ public class App {
                 Date dateArrivee1 = sdf.parse("20/03/2025");
                 Date dateDepart1 = sdf.parse("25/03/2025");
                 Reservation reservation1 = new Reservation("RES001", dateArrivee1, dateDepart1, 
-                                                         375.0, clients.get(0), chambres.get(0));
+                                                         375000, clients.get(0), chambres.get(0));
                 reservations.add(reservation1);
                 
                 // Réservation 2
                 Date dateArrivee2 = sdf.parse("15/04/2025");
                 Date dateDepart2 = sdf.parse("20/04/2025");
                 Reservation reservation2 = new Reservation("RES002", dateArrivee2, dateDepart2, 
-                                                         500.0, clients.get(1), chambres.get(1));
+                                                         500000, clients.get(1), chambres.get(1));
                 reservations.add(reservation2);
             } catch (ParseException e) {
                 e.printStackTrace();
@@ -881,7 +881,7 @@ public class App {
                 SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
                 Date dateArrivee = sdf.parse(dateArriveeStr);
                 Date dateDepart = sdf.parse(dateDepartStr);
-                double prixTotal = Double.parseDouble(prixTotalStr);
+                int prixTotal = Integer.parseInt(prixTotalStr);
                 
                 // Vérifier que la date de départ est après la date d'arrivée
                 if (dateDepart.before(dateArrivee)) {
@@ -948,7 +948,7 @@ public class App {
             data[i][2] = "Chambre " + reservation.getChambre().getNumero();
             data[i][3] = sdf.format(reservation.getDateArrivee());
             data[i][4] = sdf.format(reservation.getDateDepart());
-            data[i][5] = reservation.getPrixTotal() + " €";
+            data[i][5] = reservation.getPrixTotal() + " FCFA";
         }
         
         // Création et application du nouveau modèle au tableau
@@ -1102,7 +1102,7 @@ public class App {
                 // Parser les dates et le prix
                 Date dateArrivee = sdf.parse(dateArriveeStr);
                 Date dateDepart = sdf.parse(dateDepartStr);
-                double prixTotal = Double.parseDouble(prixTotalStr);
+                int prixTotal = Integer.parseInt(prixTotalStr);
                 
                 // Vérifier que la date de départ est après la date d'arrivée
                 if (dateDepart.before(dateArrivee)) {
