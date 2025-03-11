@@ -1,9 +1,15 @@
 import hotelmanager.Chambre;
 import hotelmanager.Client;
+import hotelmanager.Reservation;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 
 public class App {
     private JFrame mainFrame;
@@ -21,6 +27,10 @@ public class App {
 
     private List<Client> clients = new ArrayList<>();
     private JTable clientsTable;
+
+    private List<Reservation> reservations = new ArrayList<>();
+    private JTable reservationsTable;
+    private JPanel reservationsPanel;
     
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
@@ -51,11 +61,13 @@ public class App {
         createAccueilPanel();
         createClientsPanel();
         createChambresPanel();
+        createReservationsPanel();
         
         // Ajout des panels au contentPanel avec CardLayout
         contentPanel.add(accueilPanel, "ACCUEIL");
         contentPanel.add(clientsPanel, "CLIENTS");
         contentPanel.add(chambresPanel, "CHAMBRES");
+        contentPanel.add(reservationsPanel, "RESERVATIONS");
         
         // Afficher le panel d'accueil par défaut
         cardLayout.show(contentPanel, "ACCUEIL");
@@ -84,10 +96,15 @@ public class App {
         
         JMenuItem itemChambres = new JMenuItem("Gestion des Chambres");
         itemChambres.addActionListener(e -> cardLayout.show(contentPanel, "CHAMBRES"));
+
+        JMenuItem itemReservations = new JMenuItem("Gestion des Réservations");
+        itemReservations.addActionListener(e -> cardLayout.show(contentPanel, "RESERVATIONS"));
+    
         
         menuNavigation.add(itemAccueil);
         menuNavigation.add(itemClients);
         menuNavigation.add(itemChambres);
+        menuNavigation.add(itemReservations);
         
         // Menu Aide
         JMenu menuAide = new JMenu("Aide");
@@ -123,6 +140,8 @@ public class App {
         chambresButton.addActionListener(e -> cardLayout.show(contentPanel, "CHAMBRES"));
         
         JButton reservationsButton = new JButton("Réservations");
+        reservationsButton.addActionListener(e -> cardLayout.show(contentPanel, "RESERVATIONS"));
+
         JButton facturesButton = new JButton("Factures");
         
         buttonsPanel.add(clientsButton);
@@ -628,6 +647,510 @@ public class App {
                 "Le client a été modifié avec succès.",
                 "Modification réussie",
                 JOptionPane.INFORMATION_MESSAGE);
+        });
+        
+        JButton cancelButton = new JButton("Annuler");
+        cancelButton.addActionListener(e -> dialog.dispose());
+        
+        buttonPanel.add(saveButton);
+        buttonPanel.add(cancelButton);
+        
+        dialog.add(formPanel, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+        
+        dialog.pack();
+        dialog.setLocationRelativeTo(mainFrame);
+        dialog.setVisible(true);
+    }
+
+    private void createReservationsPanel() {
+        reservationsPanel = new JPanel();
+        reservationsPanel.setLayout(new BorderLayout());
+        
+        JPanel titlePanel = new JPanel();
+        JLabel titleLabel = new JLabel("Gestion des Réservations", JLabel.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        titlePanel.add(titleLabel);
+        reservationsPanel.add(titlePanel, BorderLayout.NORTH);
+        
+        // Tableau pour afficher les réservations
+        String[] columnNames = {"ID", "Client", "Chambre", "Date d'arrivée", "Date de départ", "Prix total"};
+        Object[][] data = new Object[0][6]; // Initialisation avec un tableau vide
+        
+        reservationsTable = new JTable(data, columnNames);
+        JScrollPane scrollPane = new JScrollPane(reservationsTable);
+        reservationsPanel.add(scrollPane, BorderLayout.CENTER);
+        
+        // Panel pour les boutons d'action
+        JPanel actionsPanel = new JPanel();
+        JButton addButton = new JButton("Ajouter");
+        addButton.addActionListener(e -> showAddReservationDialog());
+        
+        JButton editButton = new JButton("Modifier");
+        editButton.addActionListener(e -> modifierReservationSelectionnee());
+        
+        JButton deleteButton = new JButton("Supprimer");
+        deleteButton.addActionListener(e -> supprimerReservationSelectionnee());
+        
+        actionsPanel.add(addButton);
+        actionsPanel.add(editButton);
+        actionsPanel.add(deleteButton);
+        
+        reservationsPanel.add(actionsPanel, BorderLayout.SOUTH);
+    
+        // Ajouter quelques réservations de démonstration si nous avons des clients et des chambres
+        if (!clients.isEmpty() && !chambres.isEmpty()) {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+            try {
+                // Réservation 1
+                Date dateArrivee1 = sdf.parse("20/03/2025");
+                Date dateDepart1 = sdf.parse("25/03/2025");
+                Reservation reservation1 = new Reservation("RES001", dateArrivee1, dateDepart1, 
+                                                         375.0, clients.get(0), chambres.get(0));
+                reservations.add(reservation1);
+                
+                // Réservation 2
+                Date dateArrivee2 = sdf.parse("15/04/2025");
+                Date dateDepart2 = sdf.parse("20/04/2025");
+                Reservation reservation2 = new Reservation("RES002", dateArrivee2, dateDepart2, 
+                                                         500.0, clients.get(1), chambres.get(1));
+                reservations.add(reservation2);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        // Rafraîchir l'affichage
+        rafraichirTableauReservations();
+    }
+
+    private void showAddReservationDialog() {
+        // Vérifier qu'il y a des clients et des chambres disponibles
+        if (clients.isEmpty()) {
+            JOptionPane.showMessageDialog(mainFrame, 
+                "Veuillez d'abord ajouter des clients.", 
+                "Aucun client", 
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        List<Chambre> chambresDisponibles = new ArrayList<>();
+        for (Chambre chambre : chambres) {
+            if (chambre.isDisponible()) {
+                chambresDisponibles.add(chambre);
+            }
+        }
+        
+        if (chambresDisponibles.isEmpty()) {
+            JOptionPane.showMessageDialog(mainFrame, 
+                "Il n'y a pas de chambres disponibles.", 
+                "Aucune chambre disponible", 
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        // Créer la boîte de dialogue
+        JDialog dialog = new JDialog(mainFrame, "Ajouter une réservation", true);
+        dialog.setLayout(new BorderLayout());
+        
+        JPanel formPanel = new JPanel(new GridLayout(6, 2, 5, 5));
+        formPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        // ID de réservation
+        formPanel.add(new JLabel("ID:"));
+        JTextField idField = new JTextField();
+        formPanel.add(idField);
+        
+        // Sélection du client
+        formPanel.add(new JLabel("Client:"));
+        JComboBox<Client> clientCombo = new JComboBox<>(clients.toArray(new Client[0]));
+        formPanel.add(clientCombo);
+        
+        // Sélection de la chambre
+        formPanel.add(new JLabel("Chambre:"));
+        JComboBox<Chambre> chambreCombo = new JComboBox<>(chambresDisponibles.toArray(new Chambre[0]));
+        formPanel.add(chambreCombo);
+        
+        // Date d'arrivée
+        formPanel.add(new JLabel("Date d'arrivée (jj/mm/aaaa):"));
+        JTextField dateArriveeField = new JTextField();
+        formPanel.add(dateArriveeField);
+        
+        // Date de départ
+        formPanel.add(new JLabel("Date de départ (jj/mm/aaaa):"));
+        JTextField dateDepartField = new JTextField();
+        formPanel.add(dateDepartField);
+        
+        // Prix total
+        formPanel.add(new JLabel("Prix total:"));
+        JTextField prixTotalField = new JTextField();
+        formPanel.add(prixTotalField);
+        
+        // Ajouter un listener pour calculer automatiquement le prix total en fonction de la chambre et des dates
+        chambreCombo.addActionListener(e -> {
+            try {
+                Chambre chambreSelectionnee = (Chambre) chambreCombo.getSelectedItem();
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+                
+                if (!dateArriveeField.getText().isEmpty() && !dateDepartField.getText().isEmpty()) {
+                    Date dateArrivee = sdf.parse(dateArriveeField.getText());
+                    Date dateDepart = sdf.parse(dateDepartField.getText());
+                    
+                    // Calculer le nombre de jours
+                    long diff = dateDepart.getTime() - dateArrivee.getTime();
+                    int nbJours = (int) (diff / (1000 * 60 * 60 * 24)) + 1; // +1 pour inclure le jour d'arrivée
+                    
+                    // Calculer le prix total
+                    double prixTotal = chambreSelectionnee.getTarif() * nbJours;
+                    prixTotalField.setText(String.valueOf(prixTotal));
+                }
+            } catch (ParseException ex) {
+                // Si les dates ne sont pas encore valides, ne rien faire
+            }
+        });
+        
+        // Ajouter un listener pour recalculer le prix quand les dates changent
+        ActionListener dateListener = e -> {
+            try {
+                Chambre chambreSelectionnee = (Chambre) chambreCombo.getSelectedItem();
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+                
+                if (!dateArriveeField.getText().isEmpty() && !dateDepartField.getText().isEmpty()) {
+                    Date dateArrivee = sdf.parse(dateArriveeField.getText());
+                    Date dateDepart = sdf.parse(dateDepartField.getText());
+                    
+                    // Vérifier que la date de départ est après la date d'arrivée
+                    if (dateDepart.before(dateArrivee)) {
+                        JOptionPane.showMessageDialog(dialog,
+                            "La date de départ doit être après la date d'arrivée.",
+                            "Erreur de dates",
+                            JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    
+                    // Calculer le nombre de jours
+                    long diff = dateDepart.getTime() - dateArrivee.getTime();
+                    int nbJours = (int) (diff / (1000 * 60 * 60 * 24)) + 1; // +1 pour inclure le jour d'arrivée
+                    
+                    // Calculer le prix total
+                    double prixTotal = chambreSelectionnee.getTarif() * nbJours;
+                    prixTotalField.setText(String.valueOf(prixTotal));
+                }
+            } catch (ParseException ex) {
+                // Si les dates ne sont pas encore valides, ne rien faire
+            }
+        };
+        
+        // Ajouter le listener aux champs de date
+        dateArriveeField.addActionListener(dateListener);
+        dateDepartField.addActionListener(dateListener);
+        
+        JPanel buttonPanel = new JPanel();
+        JButton saveButton = new JButton("Enregistrer");
+        saveButton.addActionListener(e -> {
+            String id = idField.getText();
+            Client clientSelectionne = (Client) clientCombo.getSelectedItem();
+            Chambre chambreSelectionnee = (Chambre) chambreCombo.getSelectedItem();
+            String dateArriveeStr = dateArriveeField.getText();
+            String dateDepartStr = dateDepartField.getText();
+            String prixTotalStr = prixTotalField.getText();
+            
+            // Vérifier que les champs obligatoires sont remplis
+            if (id.isEmpty() || dateArriveeStr.isEmpty() || dateDepartStr.isEmpty() || prixTotalStr.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog,
+                    "Veuillez remplir tous les champs.",
+                    "Champs manquants",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // Vérifier que l'ID n'existe pas déjà
+            boolean idExiste = reservations.stream()
+                .anyMatch(r -> r.getId().equals(id));
+            
+            if (idExiste) {
+                JOptionPane.showMessageDialog(dialog, 
+                    "Une réservation avec cet ID existe déjà.", 
+                    "Erreur", 
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            try {
+                // Parser les dates et le prix
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+                Date dateArrivee = sdf.parse(dateArriveeStr);
+                Date dateDepart = sdf.parse(dateDepartStr);
+                double prixTotal = Double.parseDouble(prixTotalStr);
+                
+                // Vérifier que la date de départ est après la date d'arrivée
+                if (dateDepart.before(dateArrivee)) {
+                    JOptionPane.showMessageDialog(dialog,
+                        "La date de départ doit être après la date d'arrivée.",
+                        "Erreur de dates",
+                        JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                // Créer et ajouter la nouvelle réservation
+                Reservation nouvelleReservation = new Reservation(id, dateArrivee, dateDepart, 
+                                                               prixTotal, clientSelectionne, chambreSelectionnee);
+                reservations.add(nouvelleReservation);
+                
+                // Marquer la chambre comme non disponible
+                chambreSelectionnee.setDisponible(false);
+                
+                // Ajouter la réservation au client
+                clientSelectionne.ajouterReservation(nouvelleReservation);
+                
+                // Rafraîchir les tableaux
+                rafraichirTableauReservations();
+                rafraichirTableauChambres();
+                
+                dialog.dispose();
+                
+            } catch (ParseException ex) {
+                JOptionPane.showMessageDialog(dialog,
+                    "Format de date incorrect. Utilisez le format jj/mm/aaaa.",
+                    "Erreur de format",
+                    JOptionPane.ERROR_MESSAGE);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dialog,
+                    "Format de prix incorrect.",
+                    "Erreur de format",
+                    JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        
+        JButton cancelButton = new JButton("Annuler");
+        cancelButton.addActionListener(e -> dialog.dispose());
+        
+        buttonPanel.add(saveButton);
+        buttonPanel.add(cancelButton);
+        
+        dialog.add(formPanel, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+        
+        dialog.pack();
+        dialog.setLocationRelativeTo(mainFrame);
+        dialog.setVisible(true);
+    }
+
+    private void rafraichirTableauReservations() {
+        // Création d'un nouveau modèle de données pour le tableau
+        Object[][] data = new Object[reservations.size()][6];
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        
+        for (int i = 0; i < reservations.size(); i++) {
+            Reservation reservation = reservations.get(i);
+            data[i][0] = reservation.getId();
+            data[i][1] = reservation.getClient().getNom() + " " + reservation.getClient().getPrenom();
+            data[i][2] = "Chambre " + reservation.getChambre().getNumero();
+            data[i][3] = sdf.format(reservation.getDateArrivee());
+            data[i][4] = sdf.format(reservation.getDateDepart());
+            data[i][5] = reservation.getPrixTotal() + " €";
+        }
+        
+        // Création et application du nouveau modèle au tableau
+        String[] columnNames = {"ID", "Client", "Chambre", "Date d'arrivée", "Date de départ", "Prix total"};
+        reservationsTable.setModel(new DefaultTableModel(data, columnNames));
+    }
+
+    private void supprimerReservationSelectionnee() {
+        int row = reservationsTable.getSelectedRow();
+        if (row >= 0) {
+            int confirmation = JOptionPane.showConfirmDialog(mainFrame, 
+                "Êtes-vous sûr de vouloir supprimer cette réservation ?", 
+                "Confirmation de suppression", 
+                JOptionPane.YES_NO_OPTION);
+                
+            if (confirmation == JOptionPane.YES_OPTION) {
+                Reservation reservation = reservations.get(row);
+                
+                // Rendre la chambre disponible à nouveau
+                Chambre chambre = reservation.getChambre();
+                chambre.setDisponible(true);
+                
+                // Supprimer la réservation
+                reservations.remove(row);
+                
+                // Rafraîchir les tableaux
+                rafraichirTableauReservations();
+                rafraichirTableauChambres();
+            }
+        } else {
+            JOptionPane.showMessageDialog(mainFrame, 
+                "Veuillez sélectionner une réservation à supprimer.", 
+                "Aucune sélection", 
+                JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    private void modifierReservationSelectionnee() {
+        int selectedRow = reservationsTable.getSelectedRow();
+        if (selectedRow < 0) {
+            JOptionPane.showMessageDialog(mainFrame,
+                "Veuillez sélectionner une réservation à modifier.",
+                "Aucune sélection",
+                JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        // Récupérer la réservation sélectionnée
+        Reservation reservationAModifier = reservations.get(selectedRow);
+        
+        // Créer une liste de chambres disponibles (incluant celle actuellement réservée)
+        List<Chambre> chambresDisponibles = new ArrayList<>();
+        for (Chambre chambre : chambres) {
+            if (chambre.isDisponible() || chambre.getNumero() == reservationAModifier.getChambre().getNumero()) {
+                chambresDisponibles.add(chambre);
+            }
+        }
+        
+        // Créer la boîte de dialogue de modification
+        JDialog dialog = new JDialog(mainFrame, "Modifier une réservation", true);
+        dialog.setLayout(new BorderLayout());
+        
+        JPanel formPanel = new JPanel(new GridLayout(6, 2, 5, 5));
+        formPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        // ID de réservation (non modifiable)
+        formPanel.add(new JLabel("ID:"));
+        JTextField idField = new JTextField(reservationAModifier.getId());
+        idField.setEditable(false);
+        idField.setBackground(Color.LIGHT_GRAY);
+        formPanel.add(idField);
+        
+        // Sélection du client
+        formPanel.add(new JLabel("Client:"));
+        JComboBox<Client> clientCombo = new JComboBox<>(clients.toArray(new Client[0]));
+        clientCombo.setSelectedItem(reservationAModifier.getClient());
+        formPanel.add(clientCombo);
+        
+        // Sélection de la chambre
+        formPanel.add(new JLabel("Chambre:"));
+        JComboBox<Chambre> chambreCombo = new JComboBox<>(chambresDisponibles.toArray(new Chambre[0]));
+        chambreCombo.setSelectedItem(reservationAModifier.getChambre());
+        formPanel.add(chambreCombo);
+        
+        // Date d'arrivée
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        formPanel.add(new JLabel("Date d'arrivée (jj/mm/aaaa):"));
+        JTextField dateArriveeField = new JTextField(sdf.format(reservationAModifier.getDateArrivee()));
+        formPanel.add(dateArriveeField);
+        
+        // Date de départ
+        formPanel.add(new JLabel("Date de départ (jj/mm/aaaa):"));
+        JTextField dateDepartField = new JTextField(sdf.format(reservationAModifier.getDateDepart()));
+        formPanel.add(dateDepartField);
+        
+        // Prix total
+        formPanel.add(new JLabel("Prix total:"));
+        JTextField prixTotalField = new JTextField(String.valueOf(reservationAModifier.getPrixTotal()));
+        formPanel.add(prixTotalField);
+        
+        // Ajouter un listener pour calculer automatiquement le prix total en fonction de la chambre et des dates
+        ActionListener calculPrixListener = e -> {
+            try {
+                Chambre chambreSelectionnee = (Chambre) chambreCombo.getSelectedItem();
+                
+                if (!dateArriveeField.getText().isEmpty() && !dateDepartField.getText().isEmpty()) {
+                    Date dateArrivee = sdf.parse(dateArriveeField.getText());
+                    Date dateDepart = sdf.parse(dateDepartField.getText());
+                    
+                    // Vérifier que la date de départ est après la date d'arrivée
+                    if (!dateDepart.before(dateArrivee)) {
+                        // Calculer le nombre de jours
+                        long diff = dateDepart.getTime() - dateArrivee.getTime();
+                        int nbJours = (int) (diff / (1000 * 60 * 60 * 24)) + 1; // +1 pour inclure le jour d'arrivée
+                        
+                        // Calculer le prix total
+                        double prixTotal = chambreSelectionnee.getTarif() * nbJours;
+                        prixTotalField.setText(String.valueOf(prixTotal));
+                    }
+                }
+            } catch (ParseException ex) {
+                // Si les dates ne sont pas encore valides, ne rien faire
+            }
+        };
+        
+        // Ajouter le listener aux champs concernés
+        chambreCombo.addActionListener(calculPrixListener);
+        dateArriveeField.addActionListener(calculPrixListener);
+        dateDepartField.addActionListener(calculPrixListener);
+        
+        JPanel buttonPanel = new JPanel();
+        JButton saveButton = new JButton("Enregistrer");
+        saveButton.addActionListener(e -> {
+            Client clientSelectionne = (Client) clientCombo.getSelectedItem();
+            Chambre nouvelleChambSelectionnee = (Chambre) chambreCombo.getSelectedItem();
+            Chambre ancienneChambSelectionnee = reservationAModifier.getChambre();
+            String dateArriveeStr = dateArriveeField.getText();
+            String dateDepartStr = dateDepartField.getText();
+            String prixTotalStr = prixTotalField.getText();
+            
+            // Vérifier que les champs obligatoires sont remplis
+            if (dateArriveeStr.isEmpty() || dateDepartStr.isEmpty() || prixTotalStr.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog,
+                    "Veuillez remplir tous les champs.",
+                    "Champs manquants",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            try {
+                // Parser les dates et le prix
+                Date dateArrivee = sdf.parse(dateArriveeStr);
+                Date dateDepart = sdf.parse(dateDepartStr);
+                double prixTotal = Double.parseDouble(prixTotalStr);
+                
+                // Vérifier que la date de départ est après la date d'arrivée
+                if (dateDepart.before(dateArrivee)) {
+                    JOptionPane.showMessageDialog(dialog,
+                        "La date de départ doit être après la date d'arrivée.",
+                        "Erreur de dates",
+                        JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                // Si la chambre a changé, mettre à jour les disponibilités
+                if (nouvelleChambSelectionnee.getNumero() != ancienneChambSelectionnee.getNumero()) {
+                    // Libérer l'ancienne chambre
+                    ancienneChambSelectionnee.setDisponible(true);
+                    
+                    // Réserver la nouvelle chambre
+                    nouvelleChambSelectionnee.setDisponible(false);
+                }
+                
+                // Mettre à jour les propriétés de la réservation
+                reservationAModifier.setClient(clientSelectionne);
+                reservationAModifier.setChambre(nouvelleChambSelectionnee);
+                reservationAModifier.setDateArrivee(dateArrivee);
+                reservationAModifier.setDateDepart(dateDepart);
+                reservationAModifier.setPrixTotal(prixTotal);
+                
+                // Rafraîchir les tableaux
+                rafraichirTableauReservations();
+                rafraichirTableauChambres();
+                
+                dialog.dispose();
+                
+                JOptionPane.showMessageDialog(mainFrame,
+                    "La réservation a été modifiée avec succès.",
+                    "Modification réussie",
+                    JOptionPane.INFORMATION_MESSAGE);
+                
+            } catch (ParseException ex) {
+                JOptionPane.showMessageDialog(dialog,
+                    "Format de date incorrect. Utilisez le format jj/mm/aaaa.",
+                    "Erreur de format",
+                    JOptionPane.ERROR_MESSAGE);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dialog,
+                    "Format de prix incorrect.",
+                    "Erreur de format",
+                    JOptionPane.ERROR_MESSAGE);
+            }
         });
         
         JButton cancelButton = new JButton("Annuler");
