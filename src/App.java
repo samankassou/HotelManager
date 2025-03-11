@@ -1,4 +1,7 @@
+import hotelmanager.Chambre;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.*;
 
 public class App {
@@ -10,6 +13,10 @@ public class App {
     private JPanel clientsPanel;
     private JPanel chambresPanel;
     private JPanel accueilPanel;
+
+        // Modèles de données
+    private List<Chambre> chambres = new ArrayList<>();
+    private JTable chambresTable;
     
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
@@ -219,9 +226,9 @@ public class App {
         
         // Tableau pour afficher les chambres
         String[] columnNames = {"Numéro", "Type", "Tarif", "Disponible"};
-        Object[][] data = {}; // Données vides pour commencer
+        Object[][] data = new Object[0][4]; // Initialisation avec un tableau vide
         
-        JTable chambresTable = new JTable(data, columnNames);
+        chambresTable = new JTable(data, columnNames);
         JScrollPane scrollPane = new JScrollPane(chambresTable);
         chambresPanel.add(scrollPane, BorderLayout.CENTER);
         
@@ -232,12 +239,22 @@ public class App {
         
         JButton editButton = new JButton("Modifier");
         JButton deleteButton = new JButton("Supprimer");
+        deleteButton.addActionListener(e -> supprimerChambreSelectionnee());
+        
         
         actionsPanel.add(addButton);
         actionsPanel.add(editButton);
         actionsPanel.add(deleteButton);
         
         chambresPanel.add(actionsPanel, BorderLayout.SOUTH);
+
+        // Ajouter quelques chambres de démonstration
+        chambres.add(new Chambre(101, "Simple", 75.0, true));
+        chambres.add(new Chambre(102, "Double", 100.0, true));
+        chambres.add(new Chambre(103, "Suite", 150.0, false));
+
+        // Rafraîchir l'affichage
+        rafraichirTableauChambres();
     }
     
     private void showAddChambreDialog() {
@@ -267,8 +284,38 @@ public class App {
         JPanel buttonPanel = new JPanel();
         JButton saveButton = new JButton("Enregistrer");
         saveButton.addActionListener(e -> {
-            // Ici, code pour sauvegarder la chambre
-            dialog.dispose();
+            try {
+                int numero = Integer.parseInt(numeroField.getText());
+                String type = (String) typeCombo.getSelectedItem();
+                double tarif = Double.parseDouble(tarifField.getText());
+                boolean disponible = disponibleCheck.isSelected();
+                
+                // Vérifier que le numéro de chambre n'existe pas déjà
+                boolean numeroExiste = chambres.stream()
+                    .anyMatch(c -> c.getNumero() == numero);
+                
+                if (numeroExiste) {
+                    JOptionPane.showMessageDialog(dialog, 
+                        "Une chambre avec ce numéro existe déjà.", 
+                        "Erreur", 
+                        JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                // Créer et ajouter la nouvelle chambre
+                Chambre nouvelleChambre = new Chambre(numero, type, tarif, disponible);
+                chambres.add(nouvelleChambre);
+                
+                // Rafraîchir l'affichage
+                rafraichirTableauChambres();
+                dialog.dispose();
+                
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dialog, 
+                    "Veuillez saisir des valeurs numériques valides pour le numéro et le tarif.", 
+                    "Erreur de saisie", 
+                    JOptionPane.ERROR_MESSAGE);
+            }
         });
         
         JButton cancelButton = new JButton("Annuler");
@@ -283,5 +330,42 @@ public class App {
         dialog.pack();
         dialog.setLocationRelativeTo(mainFrame);
         dialog.setVisible(true);
+    }
+
+    private void rafraichirTableauChambres() {
+        // Création d'un nouveau modèle de données pour le tableau
+        Object[][] data = new Object[chambres.size()][4];
+        
+        for (int i = 0; i < chambres.size(); i++) {
+            Chambre chambre = chambres.get(i);
+            data[i][0] = chambre.getNumero();
+            data[i][1] = chambre.getType();
+            data[i][2] = chambre.getTarif();
+            data[i][3] = chambre.isDisponible();
+        }
+        
+        // Création et application du nouveau modèle au tableau
+        String[] columnNames = {"Numéro", "Type", "Tarif", "Disponible"};
+        chambresTable.setModel(new javax.swing.table.DefaultTableModel(data, columnNames));
+    }
+
+    private void supprimerChambreSelectionnee() {
+        int row = chambresTable.getSelectedRow();
+        if (row >= 0) {
+            int confirmation = JOptionPane.showConfirmDialog(mainFrame, 
+                "Êtes-vous sûr de vouloir supprimer cette chambre ?", 
+                "Confirmation de suppression", 
+                JOptionPane.YES_NO_OPTION);
+                
+            if (confirmation == JOptionPane.YES_OPTION) {
+                chambres.remove(row);
+                rafraichirTableauChambres();
+            }
+        } else {
+            JOptionPane.showMessageDialog(mainFrame, 
+                "Veuillez sélectionner une chambre à supprimer.", 
+                "Aucune sélection", 
+                JOptionPane.INFORMATION_MESSAGE);
+        }
     }
 }
