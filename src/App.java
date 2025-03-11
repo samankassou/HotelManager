@@ -238,6 +238,8 @@ public class App {
         addButton.addActionListener(e -> showAddChambreDialog());
         
         JButton editButton = new JButton("Modifier");
+        editButton.addActionListener(e -> modifierChambreSelectionnee());
+        
         JButton deleteButton = new JButton("Supprimer");
         deleteButton.addActionListener(e -> supprimerChambreSelectionnee());
         
@@ -367,5 +369,94 @@ public class App {
                 "Aucune sélection", 
                 JOptionPane.INFORMATION_MESSAGE);
         }
+    }
+
+    private void modifierChambreSelectionnee() {
+        int selectedRow = chambresTable.getSelectedRow();
+        if (selectedRow < 0) {
+            JOptionPane.showMessageDialog(mainFrame,
+                "Veuillez sélectionner une chambre à modifier.",
+                "Aucune sélection",
+                JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        // Récupérer la chambre sélectionnée
+        Chambre chambreAModifier = chambres.get(selectedRow);
+        
+        // Créer la boîte de dialogue de modification
+        JDialog dialog = new JDialog(mainFrame, "Modifier une chambre", true);
+        dialog.setLayout(new BorderLayout());
+        
+        JPanel formPanel = new JPanel(new GridLayout(4, 2, 5, 5));
+        formPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        // Le numéro de chambre n'est pas modifiable (clé primaire)
+        formPanel.add(new JLabel("Numéro:"));
+        JTextField numeroField = new JTextField(String.valueOf(chambreAModifier.getNumero()));
+        numeroField.setEditable(false);
+        numeroField.setBackground(Color.LIGHT_GRAY);
+        formPanel.add(numeroField);
+        
+        // Type de chambre
+        formPanel.add(new JLabel("Type:"));
+        JComboBox<String> typeCombo = new JComboBox<>(new String[]{"Simple", "Double", "Suite"});
+        typeCombo.setSelectedItem(chambreAModifier.getType());
+        formPanel.add(typeCombo);
+        
+        // Tarif
+        formPanel.add(new JLabel("Tarif:"));
+        JTextField tarifField = new JTextField(String.valueOf(chambreAModifier.getTarif()));
+        formPanel.add(tarifField);
+        
+        // Disponibilité
+        formPanel.add(new JLabel("Disponible:"));
+        JCheckBox disponibleCheck = new JCheckBox();
+        disponibleCheck.setSelected(chambreAModifier.isDisponible());
+        formPanel.add(disponibleCheck);
+        
+        // Boutons
+        JPanel buttonPanel = new JPanel();
+        JButton saveButton = new JButton("Enregistrer");
+        saveButton.addActionListener(e -> {
+            try {
+                String type = (String) typeCombo.getSelectedItem();
+                double tarif = Double.parseDouble(tarifField.getText());
+                boolean disponible = disponibleCheck.isSelected();
+                
+                // Mettre à jour les propriétés de la chambre
+                chambreAModifier.setType(type);
+                chambreAModifier.setTarif(tarif);
+                chambreAModifier.setDisponible(disponible);
+                
+                // Rafraîchir l'affichage
+                rafraichirTableauChambres();
+                dialog.dispose();
+                
+                JOptionPane.showMessageDialog(mainFrame,
+                    "La chambre a été modifiée avec succès.",
+                    "Modification réussie",
+                    JOptionPane.INFORMATION_MESSAGE);
+                
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dialog,
+                    "Veuillez saisir une valeur numérique valide pour le tarif.",
+                    "Erreur de saisie",
+                    JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        
+        JButton cancelButton = new JButton("Annuler");
+        cancelButton.addActionListener(e -> dialog.dispose());
+        
+        buttonPanel.add(saveButton);
+        buttonPanel.add(cancelButton);
+        
+        dialog.add(formPanel, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+        
+        dialog.pack();
+        dialog.setLocationRelativeTo(mainFrame);
+        dialog.setVisible(true);
     }
 }
