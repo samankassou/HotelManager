@@ -1,4 +1,5 @@
 import hotelmanager.Chambre;
+import hotelmanager.Client;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,9 @@ public class App {
         // Modèles de données
     private List<Chambre> chambres = new ArrayList<>();
     private JTable chambresTable;
+
+    private List<Client> clients = new ArrayList<>();
+    private JTable clientsTable;
     
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
@@ -141,25 +145,38 @@ public class App {
         
         // Tableau pour afficher les clients
         String[] columnNames = {"ID", "Nom", "Prénom", "Téléphone", "Email"};
-        Object[][] data = {}; // Données vides pour commencer
+        Object[][] data = new Object[0][5]; 
         
-        JTable clientsTable = new JTable(data, columnNames);
+        clientsTable = new JTable(data, columnNames);
         JScrollPane scrollPane = new JScrollPane(clientsTable);
         clientsPanel.add(scrollPane, BorderLayout.CENTER);
         
+
+
         // Panel pour les boutons d'action
         JPanel actionsPanel = new JPanel();
         JButton addButton = new JButton("Ajouter");
         addButton.addActionListener(e -> showAddClientDialog());
         
         JButton editButton = new JButton("Modifier");
+        editButton.addActionListener(e -> modifierClientSelectionne());
+        
         JButton deleteButton = new JButton("Supprimer");
+        deleteButton.addActionListener(e -> supprimerClientSelectionne());
         
         actionsPanel.add(addButton);
         actionsPanel.add(editButton);
         actionsPanel.add(deleteButton);
         
         clientsPanel.add(actionsPanel, BorderLayout.SOUTH);
+
+         // Ajouter quelques clients de démonstration
+         clients.add(new hotelmanager.Client("CL001", "Dupont", "Jean", "1 rue de Paris", "0123456789", "jean.dupont@email.com"));
+         clients.add(new hotelmanager.Client("CL002", "Martin", "Sophie", "15 avenue des Champs", "0987654321", "sophie.martin@email.com"));
+         clients.add(new hotelmanager.Client("CL003", "Dubois", "Pierre", "8 boulevard Victor Hugo", "0665544332", "pierre.dubois@email.com"));
+         
+         // Rafraîchir l'affichage
+         rafraichirTableauClients();
     }
 
     private void showAddClientDialog() {
@@ -196,7 +213,40 @@ public class App {
         JPanel buttonPanel = new JPanel();
         JButton saveButton = new JButton("Enregistrer");
         saveButton.addActionListener(e -> {
-            // Ici, code pour sauvegarder le client
+            String id = idField.getText();
+            String nom = nomField.getText();
+            String prenom = prenomField.getText();
+            String adresse = adresseField.getText();
+            String telephone = telephoneField.getText();
+            String email = emailField.getText();
+            
+            // Vérifier que les champs obligatoires sont remplis
+            if (id.isEmpty() || nom.isEmpty() || prenom.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog,
+                    "Veuillez remplir au moins l'ID, le nom et le prénom.",
+                    "Champs manquants",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // Vérifier que l'ID n'existe pas déjà
+            boolean idExiste = clients.stream()
+                .anyMatch(c -> c.getId().equals(id));
+                
+            if (idExiste) {
+                JOptionPane.showMessageDialog(dialog,
+                    "Un client avec cet ID existe déjà.",
+                    "Erreur",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // Créer et ajouter le nouveau client
+            hotelmanager.Client nouveauClient = new hotelmanager.Client(id, nom, prenom, adresse, telephone, email);
+            clients.add(nouveauClient);
+            
+            // Rafraîchir l'affichage
+            rafraichirTableauClients();
             dialog.dispose();
         });
         
@@ -213,7 +263,7 @@ public class App {
         dialog.setLocationRelativeTo(mainFrame);
         dialog.setVisible(true);
     }
-    
+
     private void createChambresPanel() {
         chambresPanel = new JPanel();
         chambresPanel.setLayout(new BorderLayout());
@@ -239,7 +289,7 @@ public class App {
         
         JButton editButton = new JButton("Modifier");
         editButton.addActionListener(e -> modifierChambreSelectionnee());
-        
+
         JButton deleteButton = new JButton("Supprimer");
         deleteButton.addActionListener(e -> supprimerChambreSelectionnee());
         
@@ -444,6 +494,140 @@ public class App {
                     "Erreur de saisie",
                     JOptionPane.ERROR_MESSAGE);
             }
+        });
+        
+        JButton cancelButton = new JButton("Annuler");
+        cancelButton.addActionListener(e -> dialog.dispose());
+        
+        buttonPanel.add(saveButton);
+        buttonPanel.add(cancelButton);
+        
+        dialog.add(formPanel, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+        
+        dialog.pack();
+        dialog.setLocationRelativeTo(mainFrame);
+        dialog.setVisible(true);
+    }
+
+    private void rafraichirTableauClients() {
+        // Création d'un nouveau modèle de données pour le tableau
+        Object[][] data = new Object[clients.size()][5];
+        
+        for (int i = 0; i < clients.size(); i++) {
+            hotelmanager.Client client = clients.get(i);
+            data[i][0] = client.getId();
+            data[i][1] = client.getNom();
+            data[i][2] = client.getPrenom();
+            data[i][3] = client.getTelephone();
+            data[i][4] = client.getEmail();
+        }
+        
+        // Création et application du nouveau modèle au tableau
+        String[] columnNames = {"ID", "Nom", "Prénom", "Téléphone", "Email"};
+        clientsTable.setModel(new javax.swing.table.DefaultTableModel(data, columnNames));
+    }
+
+    private void supprimerClientSelectionne() {
+        int row = clientsTable.getSelectedRow();
+        if (row >= 0) {
+            int confirmation = JOptionPane.showConfirmDialog(mainFrame, 
+                "Êtes-vous sûr de vouloir supprimer ce client ?", 
+                "Confirmation de suppression", 
+                JOptionPane.YES_NO_OPTION);
+                
+            if (confirmation == JOptionPane.YES_OPTION) {
+                clients.remove(row);
+                rafraichirTableauClients();
+            }
+        } else {
+            JOptionPane.showMessageDialog(mainFrame, 
+                "Veuillez sélectionner un client à supprimer.", 
+                "Aucune sélection", 
+                JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+    
+    private void modifierClientSelectionne() {
+        int selectedRow = clientsTable.getSelectedRow();
+        if (selectedRow < 0) {
+            JOptionPane.showMessageDialog(mainFrame,
+                "Veuillez sélectionner un client à modifier.",
+                "Aucune sélection",
+                JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        // Récupérer le client sélectionné
+        hotelmanager.Client clientAModifier = clients.get(selectedRow);
+        
+        // Créer la boîte de dialogue de modification
+        JDialog dialog = new JDialog(mainFrame, "Modifier un client", true);
+        dialog.setLayout(new BorderLayout());
+        
+        JPanel formPanel = new JPanel(new GridLayout(6, 2, 5, 5));
+        formPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        // L'ID n'est pas modifiable (clé primaire)
+        formPanel.add(new JLabel("ID:"));
+        JTextField idField = new JTextField(clientAModifier.getId());
+        idField.setEditable(false);
+        idField.setBackground(Color.LIGHT_GRAY);
+        formPanel.add(idField);
+        
+        formPanel.add(new JLabel("Nom:"));
+        JTextField nomField = new JTextField(clientAModifier.getNom());
+        formPanel.add(nomField);
+        
+        formPanel.add(new JLabel("Prénom:"));
+        JTextField prenomField = new JTextField(clientAModifier.getPrenom());
+        formPanel.add(prenomField);
+        
+        formPanel.add(new JLabel("Adresse:"));
+        JTextField adresseField = new JTextField(clientAModifier.getAdresse());
+        formPanel.add(adresseField);
+        
+        formPanel.add(new JLabel("Téléphone:"));
+        JTextField telephoneField = new JTextField(clientAModifier.getTelephone());
+        formPanel.add(telephoneField);
+        
+        formPanel.add(new JLabel("Email:"));
+        JTextField emailField = new JTextField(clientAModifier.getEmail());
+        formPanel.add(emailField);
+        
+        JPanel buttonPanel = new JPanel();
+        JButton saveButton = new JButton("Enregistrer");
+        saveButton.addActionListener(e -> {
+            String nom = nomField.getText();
+            String prenom = prenomField.getText();
+            String adresse = adresseField.getText();
+            String telephone = telephoneField.getText();
+            String email = emailField.getText();
+            
+            // Vérifier que les champs obligatoires sont remplis
+            if (nom.isEmpty() || prenom.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog,
+                    "Veuillez remplir au moins le nom et le prénom.",
+                    "Champs manquants",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // Mettre à jour les propriétés du client
+            clientAModifier.setNom(nom);
+            clientAModifier.setPrenom(prenom);
+            clientAModifier.setAdresse(adresse);
+            clientAModifier.setTelephone(telephone);
+            clientAModifier.setEmail(email);
+            
+            // Rafraîchir l'affichage
+            rafraichirTableauClients();
+            dialog.dispose();
+            
+            JOptionPane.showMessageDialog(mainFrame,
+                "Le client a été modifié avec succès.",
+                "Modification réussie",
+                JOptionPane.INFORMATION_MESSAGE);
         });
         
         JButton cancelButton = new JButton("Annuler");
