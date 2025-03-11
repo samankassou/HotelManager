@@ -453,6 +453,10 @@ public class App {
         // Récupérer la chambre sélectionnée
         Chambre chambreAModifier = chambres.get(selectedRow);
         
+        // Vérifier si la chambre est actuellement réservée
+        boolean estReservee = reservations.stream()
+            .anyMatch(r -> r.getChambre().getNumero() == chambreAModifier.getNumero());
+        
         // Créer la boîte de dialogue de modification
         JDialog dialog = new JDialog(mainFrame, "Modifier une chambre", true);
         dialog.setLayout(new BorderLayout());
@@ -482,6 +486,14 @@ public class App {
         formPanel.add(new JLabel("Disponible:"));
         JCheckBox disponibleCheck = new JCheckBox();
         disponibleCheck.setSelected(chambreAModifier.isDisponible());
+        
+        // Désactiver la possibilité de rendre disponible une chambre réservée
+        if (estReservee) {
+            disponibleCheck.setEnabled(false);
+            disponibleCheck.setSelected(false);
+            disponibleCheck.setToolTipText("Cette chambre est actuellement réservée");
+        }
+        
         formPanel.add(disponibleCheck);
         
         // Boutons
@@ -492,6 +504,15 @@ public class App {
                 String type = (String) typeCombo.getSelectedItem();
                 int tarif = Integer.parseInt(tarifField.getText());
                 boolean disponible = disponibleCheck.isSelected();
+                
+                // Empêcher de rendre disponible une chambre réservée
+                if (estReservee && disponible) {
+                    JOptionPane.showMessageDialog(dialog,
+                        "Impossible de rendre disponible une chambre actuellement réservée.",
+                        "Erreur",
+                        JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
                 
                 // Mettre à jour les propriétés de la chambre
                 chambreAModifier.setType(type);
@@ -671,7 +692,35 @@ public class App {
         JLabel titleLabel = new JLabel("Gestion des Réservations", JLabel.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         titlePanel.add(titleLabel);
-        reservationsPanel.add(titlePanel, BorderLayout.NORTH);
+
+
+        // Ajouter une barre d'outils pour les options de tri
+        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        filterPanel.setBorder(BorderFactory.createTitledBorder("Trier par"));
+
+        JButton triClientBtn = new JButton("Client");
+        triClientBtn.addActionListener(e -> trierReservationsParClient());
+        
+        JButton triDateBtn = new JButton("Date d'arrivée");
+        triDateBtn.addActionListener(e -> trierReservationsParDate());
+        
+        JButton triChambreBtn = new JButton("Chambre");
+        triChambreBtn.addActionListener(e -> trierReservationsParChambre());
+        
+        JButton resetTriBtn = new JButton("Réinitialiser");
+        resetTriBtn.addActionListener(e -> rafraichirTableauReservations());
+        
+        filterPanel.add(triClientBtn);
+        filterPanel.add(triDateBtn);
+        filterPanel.add(triChambreBtn);
+        filterPanel.add(resetTriBtn);
+
+        // Panel pour le titre et les filtres
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.add(titleLabel, BorderLayout.NORTH);
+        headerPanel.add(filterPanel, BorderLayout.CENTER);
+        
+        reservationsPanel.add(headerPanel, BorderLayout.NORTH);
         
         // Tableau pour afficher les réservations
         String[] columnNames = {"ID", "Client", "Chambre", "Date d'arrivée", "Date de départ", "Prix total"};
@@ -1165,5 +1214,63 @@ public class App {
         dialog.pack();
         dialog.setLocationRelativeTo(mainFrame);
         dialog.setVisible(true);
+    }
+
+    private void trierReservationsParClient() {
+        // Cloner la liste pour ne pas modifier l'ordre original
+        List<Reservation> reservationsTriees = new ArrayList<>(reservations);
+        
+        // Trier la liste par nom de client
+        reservationsTriees.sort((r1, r2) -> {
+            String nomClient1 = r1.getClient().getNom() + " " + r1.getClient().getPrenom();
+            String nomClient2 = r2.getClient().getNom() + " " + r2.getClient().getPrenom();
+            return nomClient1.compareTo(nomClient2);
+        });
+        
+        // Afficher les réservations triées
+        afficherReservationsTriees(reservationsTriees);
+    }
+    
+    private void trierReservationsParDate() {
+        // Cloner la liste pour ne pas modifier l'ordre original
+        List<Reservation> reservationsTriees = new ArrayList<>(reservations);
+        
+        // Trier la liste par date d'arrivée
+        reservationsTriees.sort((r1, r2) -> r1.getDateArrivee().compareTo(r2.getDateArrivee()));
+        
+        // Afficher les réservations triées
+        afficherReservationsTriees(reservationsTriees);
+    }
+    
+    private void trierReservationsParChambre() {
+        // Cloner la liste pour ne pas modifier l'ordre original
+        List<Reservation> reservationsTriees = new ArrayList<>(reservations);
+        
+        // Trier la liste par numéro de chambre
+        reservationsTriees.sort((r1, r2) -> 
+            Integer.compare(r1.getChambre().getNumero(), r2.getChambre().getNumero()));
+        
+        // Afficher les réservations triées
+        afficherReservationsTriees(reservationsTriees);
+    }
+    
+    private void afficherReservationsTriees(List<Reservation> reservationsTriees) {
+        // Création d'un nouveau modèle de données pour le tableau
+        Object[][] data = new Object[reservationsTriees.size()][6];
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        
+        for (int i = 0; i < reservationsTriees.size(); i++) {
+            Reservation reservation = reservationsTriees.get(i);
+            data[i][0] = reservation.getId();
+            data[i][1] = reservation.getClient().getNom() + " " + reservation.getClient().getPrenom();
+            data[i][2] = "Chambre " + reservation.getChambre().getNumero();
+            data[i][3] = sdf.format(reservation.getDateArrivee());
+            data[i][4] = sdf.format(reservation.getDateDepart());
+            data[i][5] = reservation.getPrixTotal() + " FCFA";
+        }
+        
+        // Création et application du nouveau modèle au tableau
+        String[] columnNames = {"ID", "Client", "Chambre", "Date d'arrivée", "Date de départ", "Prix total"};
+        reservationsTable.setModel(new DefaultTableModel(data, columnNames));
     }
 }
