@@ -1,4 +1,4 @@
-package hotelmanager;
+package hotelmanager.model;
 
 import java.util.Date;
 

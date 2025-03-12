@@ -1,4 +1,4 @@
-package hotelmanager;
+package hotelmanager.model;
 
 public class Chambre {
     private int numero;
