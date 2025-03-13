@@ -1,6 +1,7 @@
 package hotelmanager.data;
 import hotelmanager.model.Chambre;
 import hotelmanager.model.Client;
+import hotelmanager.model.Facture;
 import hotelmanager.model.Reservation;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -12,11 +13,13 @@ public class DataManager {
     private List<Client> clients;
     private List<Chambre> chambres;
     private List<Reservation> reservations;
+    private List<Facture> factures;
     
     public DataManager() {
         clients = new ArrayList<>();
         chambres = new ArrayList<>();
         reservations = new ArrayList<>();
+        factures = new ArrayList<>();
         
         // Charger des données de démonstration
         loadDemoData();
@@ -150,6 +153,48 @@ public class DataManager {
             reservation.setChambre(nouvelleChambre);
         }
     }
+
+    public List<Facture> getFactures() {
+        return factures;
+    }
+
+    public void addFacture(Facture facture) {
+        factures.add(facture);
+        // Mise à jour de la réservation associée
+        facture.getReservation().setFacture(facture);
+    }
+    
+    public boolean removeFacture(Facture facture) {
+        // Dissocier la facture de la réservation
+        if (facture.getReservation() != null) {
+            facture.getReservation().setFacture(null);
+        }
+        return factures.remove(facture);
+    }
+    
+    public boolean removeFacture(int index) {
+        if (index >= 0 && index < factures.size()) {
+            Facture facture = factures.get(index);
+            // Dissocier la facture de la réservation
+            if (facture.getReservation() != null) {
+                facture.getReservation().setFacture(null);
+            }
+            factures.remove(index);
+            return true;
+        }
+        return false;
+    }
+    
+    public Facture getFacture(int index) {
+        if (index >= 0 && index < factures.size()) {
+            return factures.get(index);
+        }
+        return null;
+    }
+    
+    public boolean isFactureIdUnique(String id) {
+        return !factures.stream().anyMatch(f -> f.getId().equals(id));
+    }
     
     // Charger des données de démonstration
     private void loadDemoData() {
@@ -166,6 +211,8 @@ public class DataManager {
         // Réservations de démonstration
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
         try {
+            
+
             Date dateArrivee1 = sdf.parse("20/03/2025");
             Date dateDepart1 = sdf.parse("25/03/2025");
             Reservation reservation1 = new Reservation("RES001", dateArrivee1, dateDepart1, 125000, clients.get(0), chambres.get(0));
@@ -177,8 +224,38 @@ public class DataManager {
             Reservation reservation2 = new Reservation("RES002", dateArrivee2, dateDepart2, 175000, clients.get(1), chambres.get(1));
             reservations.add(reservation2);
             chambres.get(1).setDisponible(false);
+
+            // Création des factures pour les réservations de démonstration
+            Date dateFacturation = new Date(); // Date actuelle
+            
+            Facture facture1 = new Facture("FAC001", dateFacturation, reservations.get(0));
+            facture1.ajouterFraisSupplementaire("Petit-déjeuner", 15000);
+            facture1.setEstPayee(true);
+            facture1.setMethodePaiement("Carte bancaire");
+            factures.add(facture1);
+            reservations.get(0).setFacture(facture1);
+            
+            Facture facture2 = new Facture("FAC002", dateFacturation, reservations.get(1));
+            facture2.ajouterFraisSupplementaire("Service en chambre", 10000);
+            facture2.ajouterFraisSupplementaire("Parking", 5000);
+            factures.add(facture2);
+            reservations.get(1).setFacture(facture2);
+
         } catch (ParseException e) {
             e.printStackTrace();
         }
+    }
+
+    // Méthode pour ajouter automatiquement une facture lors d'une réservation
+    public void addReservationWithFacture(Reservation reservation) {
+        reservations.add(reservation);
+        // Mise à jour de l'état de la chambre
+        reservation.getChambre().setDisponible(false);
+        
+        // Création automatique d'une facture
+        String factureId = "FAC" + String.format("%03d", factures.size() + 1);
+        Facture facture = new Facture(factureId, new Date(), reservation);
+        factures.add(facture);
+        reservation.setFacture(facture);
     }
 }

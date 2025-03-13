@@ -22,6 +22,7 @@ public class HotelManager {
     private ClientsPanel clientsPanel;
     private ChambresPanel chambresPanel;
     private ReservationsPanel reservationsPanel;
+    private FacturesPanel facturesPanel;
     
     private DataManager dataManager;
     
@@ -52,12 +53,14 @@ public class HotelManager {
         clientsPanel = new ClientsPanel(dataManager, mainFrame);
         chambresPanel = new ChambresPanel(dataManager, mainFrame);
         reservationsPanel = new ReservationsPanel(dataManager, mainFrame);
+        facturesPanel = new FacturesPanel(dataManager, mainFrame);
         
         // Ajout des panels au contentPanel avec CardLayout
         contentPanel.add(accueilPanel, "ACCUEIL");
         contentPanel.add(clientsPanel, "CLIENTS");
         contentPanel.add(chambresPanel, "CHAMBRES");
         contentPanel.add(reservationsPanel, "RESERVATIONS");
+        contentPanel.add(facturesPanel, "FACTURES");
         
         // Afficher le panel d'accueil par défaut
         cardLayout.show(contentPanel, "ACCUEIL");
@@ -88,11 +91,15 @@ public class HotelManager {
 
         JMenuItem itemReservations = new JMenuItem("Gestion des Réservations");
         itemReservations.addActionListener(e -> cardLayout.show(contentPanel, "RESERVATIONS"));
+
+        JMenuItem itemFactures = new JMenuItem("Gestion des Factures");
+        itemFactures.addActionListener(e -> cardLayout.show(contentPanel, "FACTURES"));
     
         menuNavigation.add(itemAccueil);
         menuNavigation.add(itemClients);
         menuNavigation.add(itemChambres);
         menuNavigation.add(itemReservations);
+        menuNavigation.add(itemFactures);
         
         // Menu Aide
         JMenu menuAide = new JMenu("Aide");
@@ -131,6 +138,7 @@ public class HotelManager {
         reservationsButton.addActionListener(e -> cardLayout.show(contentPanel, "RESERVATIONS"));
 
         JButton facturesButton = new JButton("Factures");
+        facturesButton.addActionListener(e -> cardLayout.show(contentPanel, "FACTURES"));
         
         buttonsPanel.add(clientsButton);
         buttonsPanel.add(chambresButton);
