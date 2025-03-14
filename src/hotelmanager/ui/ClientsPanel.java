@@ -45,6 +45,12 @@ public class ClientsPanel extends JPanel {
         addButton.addActionListener(e -> showAddClientDialog());
         editButton.addActionListener(e -> modifierClientSelectionne());
         deleteButton.addActionListener(e -> supprimerClientSelectionne());
+
+        // Mettre le bouton supprimer en rouge
+        deleteButton.setBackground(new Color(220, 53, 69));
+        deleteButton.setForeground(Color.WHITE);
+        deleteButton.setFocusPainted(false);
+       
         
         actionsPanel.add(addButton);
         actionsPanel.add(editButton);

@@ -41,6 +41,12 @@ public class ChambresPanel extends JPanel {
         JButton addButton = new JButton("Ajouter");
         JButton editButton = new JButton("Modifier");
         JButton deleteButton = new JButton("Supprimer");
+
+        // Mettre le bouton supprimer en rouge
+        deleteButton.setBackground(new Color(220, 53, 69));
+        deleteButton.setForeground(Color.WHITE);
+        deleteButton.setFocusPainted(false);
+       
         
         addButton.addActionListener(e -> showAddChambreDialog());
         editButton.addActionListener(e -> modifierChambreSelectionnee());
